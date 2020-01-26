@@ -5,6 +5,7 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
+import javafx.scene.layout.HBox;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -18,31 +19,63 @@ public class Controller implements Initializable {
     TextArea textArea;
 
     @FXML
-    TextField msgField;
+    TextField msgField, loginField;
+
+    @FXML
+    PasswordField passField;
+
+    @FXML
+    HBox loginBox;
 
     private Network network;
+    private boolean authenticated;
+    private String nickname;
+
+    public void setAuthenticated(boolean authenticated) {
+        this.authenticated = authenticated;
+        loginBox.setVisible(!authenticated);
+        loginBox.setManaged(!authenticated);
+        msgField.setVisible(authenticated);
+        msgField.setManaged(authenticated);
+    }
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+
         try {
-            network = new Network(8189); // Класс Network будет отвечать за получение и отправку информации
-                                               // для стороны клиента. считывает водящие и отправляет исходящие на сервер порт 8189
-            new Thread(() -> { // создаём доп. поток для постоянной обработки сообщений клиента и отображения их в textArea
+            setAuthenticated(false);
+            network = new Network(8189);
+            Thread t = new Thread(() -> {
                 try {
                     while (true) {
-                        String msg = network.readMsg(); //Сообщения слушаем исходящие от сервера они же входящие для клиента
-                        textArea.appendText(msg + "\n"); // Добавляем в область отображения
+                        String msg = network.readMsg();
+                        if (msg.startsWith("/authOk ")) {
+                            nickname = msg.split( "\\s")[1];
+                            setAuthenticated(true);
+                            break;
+                        }
+                        textArea.appendText(msg + "\n");
+                    }
+                    while (true) {
+                        String msg = network.readMsg();
+                        if (msg.equals("/end_confirm")) {
+                            textArea.appendText("Завершено общение с сервером" + "\n");
+                            break;
+                        }
+                        textArea.appendText(msg + "\n");
                     }
                 } catch (IOException e) {
-                    Platform.runLater(() -> { // Ещё дополнительный поток для, в даном случае изменений в интерфейсе
-                                              // Тут хотел бы ещё какой-нибудь пример работы Platform.runLater узнать
+                    Platform.runLater(() -> {
                         Alert alert = new Alert(Alert.AlertType.WARNING, "Соединение с серверов разорвано", ButtonType.OK);
                         alert.showAndWait();
                     });
                 } finally {
-                    network.close(); // Освобождение ресурсов, я так понимаю тут должно быть несколько клиентов или переподключение?
+                    network.close();
+                    Platform.exit();
                 }
-            }).start(); // запуск потока для обработки сообщений на стороне клиента
+            });
+            t.setDaemon(true);
+            t.start();
         } catch (IOException e) {
             throw new RuntimeException("Невозможно подключиться к серверу");
         }
@@ -50,9 +83,20 @@ public class Controller implements Initializable {
 
     public void sendMsg(ActionEvent actionEvent) {
         try {
-            network.sendMsg(msgField.getText()); // Отправка информации через out поток класса Network
+            network.sendMsg(msgField.getText());
             msgField.clear();
             msgField.requestFocus();
+        } catch (IOException e) {
+            Alert alert = new Alert(Alert.AlertType.WARNING, "Не удалось отправить сообщение, проверьте сетевое подключение", ButtonType.OK);
+            alert.showAndWait();
+        }
+    }
+
+    public void tryToAuth(ActionEvent actionEvent) {
+        try {
+            network.sendMsg("/auth " + loginField.getText() + " " + passField.getText());
+            loginField.clear();
+            passField.clear();
         } catch (IOException e) {
             Alert alert = new Alert(Alert.AlertType.WARNING, "Не удалось отправить сообщение, проверьте сетевое подключение", ButtonType.OK);
             alert.showAndWait();
