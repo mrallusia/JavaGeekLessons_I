@@ -9,6 +9,7 @@ public class BasicAuthManager implements AuthManager {
         private String password;
         private String nickname;
 
+
         public Entry (String login, String password, String nickname) {
             this.login = login;
             this.password = password;
@@ -33,5 +34,22 @@ public class BasicAuthManager implements AuthManager {
             }
         }
         return null;
+    }
+
+    @Override
+    public void changeNickname (String nickname, String newNickname){
+
+        String oldLogin = null;
+        String oldPass = null;
+        int index = 0;
+        for (Entry u: users) {
+            if (u.nickname.equals(nickname)) {
+                index = users.indexOf(u);
+                oldLogin = u.login;
+                oldPass = u.password;
+            }
+        }
+        users.add(new Entry (oldLogin, oldPass, newNickname));
+        users.remove(index);
     }
 }

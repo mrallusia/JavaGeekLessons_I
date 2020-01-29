@@ -8,12 +8,23 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.text.Font?>
+<?import javafx.scene.control.ListView?>
 <VBox fx:controller="com.geekbrains.chat.client.Controller" xmlns:fx="http://javafx.com/fxml" alignment="center">
     <HBox fx:id="loginBox">
-       <TextField fx:id ="loginField" HBox.hgrow="ALWAYS" />
-       <PasswordField fx:id ="passField" HBox.hgrow="ALWAYS" />
-        <Button HBox.hgrow="ALWAYS" text="Войти" onAction="#tryToAuth" />
+       <TextField fx:id ="loginField" promptText="Логин" HBox.hgrow="ALWAYS" />
+       <PasswordField fx:id ="passField" promptText="Пароль" HBox.hgrow="ALWAYS" onAction="#tryToAuth"/>
+       <Button HBox.hgrow="ALWAYS" text="Войти" minWidth="100" maxWidth="100" onAction="#tryToAuth" />
     </HBox>
-    <TextArea fx:id="textArea" VBox.vgrow="ALWAYS" editable="false" />
+    <HBox VBox.vgrow="ALWAYS">
+
+        <TextArea fx:id="textArea" HBox.hgrow="ALWAYS" editable="false" >
+            <font>
+                <Font name="System" size="16" />
+            </font>
+        </TextArea>
+        <ListView fx:id="clientsList" maxWidth="200" minWidth="200"/>
+    </HBox>
+
     <TextField fx:id="msgField" onAction="#sendMsg" />
 </VBox>

@@ -16,6 +16,14 @@ public class Network {
         out = new DataOutputStream(socket.getOutputStream()); // создадим обработчики потоков
     }
 
+    public boolean isConnected() {
+        if (socket == null || socket.isClosed()) {
+            return false;
+        }
+        return true;
+    }
+
+
     public void sendMsg(String msg) throws IOException {
         out.writeUTF(msg);
     }

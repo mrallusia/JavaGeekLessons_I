@@ -35,6 +35,15 @@ public class Server {
             o.sendMsg(msg);
         }
     }
+    public void broadcastClientsList () {
+        StringBuilder stringBuilder = new StringBuilder("/clients_list ");
+        for (ClientHandler o: clients) {
+            stringBuilder.append(o.getNickname()).append(" ");
+        }
+        stringBuilder.setLength(stringBuilder.length()-1);
+        String out = stringBuilder.toString();
+        broadcastMsg(out);
+    }
 
     /**
      * Метод для приватных сообщений
@@ -47,17 +56,20 @@ public class Server {
      *     private DataOutputStream out;
      *     Значит он работает с соединением клиент-сервер
      */
-    public void privatetMsg (ClientHandler clientHandler, String msg) {
-        clientHandler.sendMsg(clientHandler.getNickname() + " wisper " + msg.split("\\s")[1] + ": " + msg.split("\\s")[2]);
-
-        for (ClientHandler o : clients) {
-            if (o.getNickname().equals(msg.split("\\s")[1])) {
-                o.sendMsg(clientHandler.getNickname() + " wisper " + o.getNickname() + ": " + msg.split("\\s")[2]);
+    public void privatetMsg (ClientHandler sender, String receiverNickname, String msg) {
+        if (sender.getNickname().equals(receiverNickname)) {
+            sender.sendMsg("Нельзя посылать личное сообщение самому себе");
+            return;
+        }
+        for (ClientHandler o: clients){
+            if (o.getNickname().equals(receiverNickname)) {
+                o.sendMsg("from " + sender.getNickname() + ": " + msg);
+                sender.sendMsg("to " + receiverNickname + ": " + msg);
+                return;
             }
         }
+        sender.sendMsg(receiverNickname + " не в сети");
     }
-
-
 
     public boolean isNickBusy (String nickname) {
         for (ClientHandler o: clients) {
@@ -69,10 +81,15 @@ public class Server {
     }
 
     public synchronized void subscribe (ClientHandler clientHandler) {
+        broadcastMsg(clientHandler.getNickname() + " зашёл в чат");
         clients.add(clientHandler);
+        broadcastClientsList();
     }
 
     public synchronized void unsubscribe (ClientHandler clientHandler) {
         clients.remove(clientHandler);
+        broadcastMsg(clientHandler.getNickname() + " вышел в чата");
+        broadcastClientsList();
     }
+
 }
